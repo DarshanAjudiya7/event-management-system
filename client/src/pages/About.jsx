@@ -3,6 +3,19 @@ import { motion } from 'framer-motion';
 import { Mail, Users, History, CalendarHeart } from 'lucide-react';
 
 const About = () => {
+    const ownerProfiles = [
+        {
+            image: '/owners/profile.jpeg',
+            title: 'Website Owner',
+            blurb: 'Leading the vision behind Eventify with a focus on simplicity, clarity, and a polished user experience.'
+        },
+        {
+            image: '/owners/heer.jpeg',
+            title: 'Website Owner',
+            blurb: 'Helping shape the platform with thoughtful execution, fresh ideas, and a strong builder mindset.'
+        }
+    ];
+
     return (
         <div className="container mx-auto px-4 py-20 lg:py-32 overflow-hidden">
             <div className="max-w-4xl mx-auto text-center mb-16 space-y-6">
@@ -71,6 +84,54 @@ const About = () => {
                         We're always looking for new ways to improve. If you have advice, feedback, or just want to talk about events, we're here to listen. Expect a response from our small, dedicated team within 24 hours.
                     </p>
                 </motion.div>
+            </div>
+
+            <div className="mt-20 mb-24">
+                <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
+                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-blue-600">
+                        Website Owners
+                    </span>
+                    <h2 className="text-3xl lg:text-4xl font-black text-slate-900">
+                        Meet The Faces Behind Eventify
+                    </h2>
+                    <p className="text-slate-500 text-base lg:text-lg leading-relaxed">
+                        The platform is driven by people who care deeply about making event discovery and management feel modern, smooth, and welcoming.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    {ownerProfiles.map((owner, index) => (
+                        <motion.div
+                            key={owner.image}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.12 }}
+                            className="group overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
+                        >
+                            <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+                                <img
+                                    src={owner.image}
+                                    alt={owner.title}
+                                    className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-900/70 to-transparent" />
+                            </div>
+
+                            <div className="p-8">
+                                <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 mb-3">
+                                    Eventify Team
+                                </p>
+                                <h3 className="text-2xl font-black text-slate-900 mb-3">
+                                    {owner.title}
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-500">
+                                    {owner.blurb}
+                                </p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
             </div>
 
             {/* Testimonial / Quote */}

@@ -165,7 +165,6 @@ const Dashboard = () => {
                     <td className="px-8 py-6 font-medium text-slate-500 text-sm italic">{new Date(event.date).toLocaleDateString()}</td>
                     <td className="px-8 py-6">
                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${
-                           event.status === 'live' ? 'bg-emerald-100 text-emerald-600' :
                            event.status === 'upcoming' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
                        }`}>
                            {event.status}
@@ -199,7 +198,9 @@ const Dashboard = () => {
                    <tr key={reg._id} className="hover:bg-slate-50/50 transition-colors">
                      <td className="px-8 py-6">
                         <p className="font-bold text-slate-800 uppercase text-sm tracking-tight">{reg.name}</p>
-                        <p className="text-xs text-slate-400">{reg.email} | {reg.phone}</p>
+                        <p className="text-xs text-slate-400">
+                          {reg.collegeId} | Year {reg.year} | {reg.branch}
+                        </p>
                      </td>
                      <td className="px-8 py-6 font-bold text-blue-600 text-xs uppercase tracking-widest">{reg.eventId?.title || 'Unknown Event'}</td>
                      <td className="px-8 py-6 text-slate-500 text-sm italic">{new Date(reg.createdAt).toLocaleDateString()}</td>
@@ -254,7 +255,6 @@ const Dashboard = () => {
                             onChange={(e) => setEventData({ ...eventData, status: e.target.value })}
                           >
                             <option value="upcoming">Upcoming</option>
-                            <option value="live">Live</option>
                             <option value="past">Past</option>
                           </select>
                        </div>

@@ -14,9 +14,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const loggedInUser = await login(email, password);
-      const redirectTo = location.state?.from?.pathname;
-      navigate(redirectTo || (loggedInUser.role === 'admin' ? '/dashboard' : '/'));
+      await login(email, password);
+      navigate(location.state?.from || '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login');
     }

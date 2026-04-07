@@ -13,11 +13,8 @@ const Navbar = () => {
     { name: 'About', path: '/about' },
     { name: 'Events', path: '/events' },
     { name: 'Contact', path: '/contact' },
+    { name: 'Dashboard', path: '/dashboard' },
   ];
-
-  if (user?.role === 'admin') {
-    navLinks.push({ name: 'Dashboard', path: '/dashboard' });
-  }
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -48,7 +45,7 @@ const Navbar = () => {
             ))}
             {user ? (
               <>
-                <span className="text-sm font-medium text-slate-500">{user.name}</span>
+                <span className="text-sm font-semibold text-slate-500">{user.name}</span>
                 <button
                   onClick={logout}
                   className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-slate-700 shadow-lg shadow-slate-900/10 active:scale-95 transition-all"

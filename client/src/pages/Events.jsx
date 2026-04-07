@@ -1,23 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Calendar, X, CheckCircle, Info } from 'lucide-react';
+import { Search, X, CheckCircle, Calendar, Info, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import Loader from '../components/Loader';
+import { useAuth } from '../context/AuthContext';
+
+const initialForm = {
+  name: '',
+  collegeId: '',
+  year: '1',
+  branch: '',
+};
 
 const Events = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '' });
-  const [regSuccess, setRegSuccess] = useState(false);
+  const [regForm, setRegForm] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      setRegForm((current) => ({ ...current, name: current.name || user.name || '' }));
+      fetchMyRegistrations();
+    } else {
+      setRegisteredEventIds([]);
+      setRegForm(initialForm);
+    }
+  }, [user]);
 
   const fetchEvents = async () => {
     try {
@@ -30,37 +53,75 @@ const Events = () => {
     }
   };
 
+  const fetchMyRegistrations = async () => {
+    try {
+      const { data } = await axios.get('/api/register/my');
+      setRegisteredEventIds(data.map((registration) => registration.eventId?._id).filter(Boolean));
+    } catch (error) {
+      console.error('Error fetching my registrations:', error);
+    }
+  };
+
   const handleRegister = (event) => {
+    if (event.status === 'past') {
+      return;
+    }
+
+    if (!user) {
+      window.alert('Please login first to register for an event.');
+      navigate('/login', { state: { from: '/events' } });
+      return;
+    }
+
+    if (registeredEventIds.includes(event._id)) {
+      return;
+    }
+
+    setSuccessMessage('');
     setSelectedEvent(event);
+    setRegForm({
+      name: user?.name || '',
+      collegeId: '',
+      year: '1',
+      branch: '',
+    });
     setIsRegistering(true);
   };
 
   const submitRegistration = async (e) => {
     e.preventDefault();
+    if (!selectedEvent) return;
+
+    setSubmitting(true);
     try {
-      await axios.post('/api/registrations', {
+      const { data } = await axios.post('/api/register', {
         ...regForm,
+        year: Number(regForm.year),
         eventId: selectedEvent._id,
       });
-      await fetchEvents();
-      setRegSuccess(true);
-      setRegForm({ name: '', email: '', phone: '' });
-      setTimeout(() => {
-        setRegSuccess(false);
-        setIsRegistering(false);
-        setSelectedEvent(null);
-      }, 3000);
+
+      setSuccessMessage(data.message || 'Registration successful.');
+      setIsRegistering(false);
+      setSelectedEvent(null);
+      await Promise.all([fetchEvents(), fetchMyRegistrations()]);
+      setRegForm((current) => ({ ...initialForm, name: user?.name || current.name || '' }));
     } catch (error) {
       console.error('Registration failed:', error);
-      alert('Registration failed. Please try again.');
+      window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const filteredEvents = events.filter((ev) => {
-    const matchesFilter = filter === 'all' || ev.status === filter;
-    const matchesSearch = ev.title.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchesFilter = filter === 'all' || event.status === filter;
+      const matchesSearch =
+        event.title.toLowerCase().includes(search.toLowerCase()) ||
+        event.description.toLowerCase().includes(search.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [events, filter, search]);
 
   const categories = [
     { id: 'all', label: 'All Events' },
@@ -69,20 +130,20 @@ const Events = () => {
     { id: 'past', label: 'Past' },
   ];
 
-  if (loading) return <Loader />;
+  if (loading || authLoading) return <Loader />;
 
   return (
     <div className="min-h-screen bg-slate-50/30 py-20">
       <div className="container mx-auto px-4">
-        {/* Header Section */}
         <div className="mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Explore Our Events</h1>
-              <p className="text-slate-500 font-medium max-w-xl text-lg">Browse through past, live, and upcoming experiences curated for you.</p>
+              <p className="text-slate-500 font-medium max-w-xl text-lg">
+                Browse through past, live, and upcoming experiences curated for you.
+              </p>
             </div>
-            
-            {/* Search and Filters */}
+
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative group min-w-[300px]">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
@@ -98,45 +159,57 @@ const Events = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-             {categories.map((cat) => (
-               <button
-                 key={cat.id}
-                 onClick={() => setFilter(cat.id)}
-                 className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border-2 ${
-                   filter === cat.id
-                     ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                     : 'bg-white border-slate-100 text-slate-500 hover:border-blue-100 hover:text-blue-600'
-                 }`}
-               >
-                 {cat.label}
-               </button>
-             ))}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setFilter(cat.id)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border-2 ${
+                  filter === cat.id
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'bg-white border-slate-100 text-slate-500 hover:border-blue-100 hover:text-blue-600'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Section Grid */}
+        {successMessage && (
+          <div className="mb-8 flex items-center gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700 shadow-sm">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-semibold">{successMessage}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-           <AnimatePresence mode="popLayout">
-             {filteredEvents.length > 0 ? filteredEvents.map((event) => (
-               <EventCard key={event._id} event={event} onRegister={handleRegister} />
-             )) : (
-               <motion.div
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[40px] border border-slate-100 border-dashed"
-               >
-                 <Info className="w-12 h-12 text-slate-300 mb-4" />
-                 <p className="text-xl font-bold text-slate-400">No events found matching your criteria</p>
-                 <button onClick={() => {setFilter('all'); setSearch('')}} className="mt-4 text-blue-600 font-bold hover:underline">Clear all filters</button>
-               </motion.div>
-             )}
-           </AnimatePresence>
+          <AnimatePresence mode="popLayout">
+            {filteredEvents.length > 0 ? filteredEvents.map((event) => (
+              <EventCard
+                key={event._id}
+                event={event}
+                onRegister={handleRegister}
+                isRegistered={registeredEventIds.includes(event._id)}
+              />
+            )) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[40px] border border-slate-100 border-dashed"
+              >
+                <Info className="w-12 h-12 text-slate-300 mb-4" />
+                <p className="text-xl font-bold text-slate-400">No events found matching your criteria</p>
+                <button onClick={() => { setFilter('all'); setSearch(''); }} className="mt-4 text-blue-600 font-bold hover:underline">
+                  Clear all filters
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Registration Modal */}
       <AnimatePresence>
-        {isRegistering && (
+        {isRegistering && selectedEvent && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
@@ -145,7 +218,7 @@ const Events = () => {
               onClick={() => setIsRegistering(false)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -153,80 +226,99 @@ const Events = () => {
               className="relative w-full max-w-xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {regSuccess ? (
-                <div className="p-12 text-center bg-blue-600 text-white">
-                   <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-                     <CheckCircle className="w-12 h-12 text-white" />
-                   </div>
-                   <h3 className="text-3xl font-black mb-4">You're In!</h3>
-                   <p className="text-blue-50 text-lg font-medium opacity-90 leading-relaxed mb-6">
-                     Successfully registered for <br /> <strong className="text-white text-xl">"{selectedEvent?.title}"</strong>
-                   </p>
-                </div>
-              ) : (
-                <>
-                  <div className="p-10 lg:p-12 space-y-8">
-                     <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                           <span className="text-blue-600 font-black uppercase text-xs tracking-widest bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 inline-block">Secure Registration</span>
-                           <h3 className="text-3xl font-black text-slate-900 leading-tight">Student Registration Form</h3>
-                           <p className="text-slate-500 font-medium italic">Joining: {selectedEvent?.title}</p>
-                        </div>
-                        <button
-                          onClick={() => setIsRegistering(false)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all"
-                        >
-                          <X className="w-6 h-6" />
-                        </button>
-                     </div>
-
-                     <form onSubmit={submitRegistration} className="space-y-6">
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="John Doe"
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
-                            value={regForm.name}
-                            onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-                          <input
-                            type="email"
-                            required
-                            placeholder="john@example.com"
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
-                            value={regForm.email}
-                            onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-700 ml-1">Phone Number</label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="+91 00000 00000"
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
-                            value={regForm.phone}
-                            onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full bg-blue-600 text-white py-5 rounded-2xl text-lg font-black hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center space-x-3 group"
-                        >
-                          <span>Confirm Registration</span>
-                          <Calendar className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        </button>
-                        <p className="text-center text-xs text-slate-400 font-medium">By clicking confirm, you agree to our event participation terms.</p>
-                     </form>
+              <div className="p-10 lg:p-12 space-y-8">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <span className="text-blue-600 font-black uppercase text-xs tracking-widest bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 inline-block">
+                      Secure Registration
+                    </span>
+                    <h3 className="text-3xl font-black text-slate-900 leading-tight">Student Registration Form</h3>
+                    <p className="text-slate-500 font-medium italic">Joining: {selectedEvent.title}</p>
                   </div>
-                </>
-              )}
+                  <button
+                    onClick={() => setIsRegistering(false)}
+                    className="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={submitRegistration} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={regForm.name}
+                      onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">College ID</label>
+                    <input
+                      type="text"
+                      required
+                      value={regForm.collegeId}
+                      onChange={(e) => setRegForm({ ...regForm, collegeId: e.target.value })}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                      placeholder="22CSE104"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Year</label>
+                      <select
+                        value={regForm.year}
+                        onChange={(e) => setRegForm({ ...regForm, year: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                      >
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Branch</label>
+                      <input
+                        type="text"
+                        required
+                        value={regForm.branch}
+                        onChange={(e) => setRegForm({ ...regForm, branch: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                        placeholder="Computer Engineering"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Event ID</label>
+                    <input
+                      type="text"
+                      value={selectedEvent._id}
+                      readOnly
+                      className="w-full px-6 py-4 bg-slate-100 border border-slate-100 rounded-2xl text-slate-500 outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-blue-600 text-white py-5 rounded-2xl text-lg font-black hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center space-x-3 group"
+                  >
+                    <span>{submitting ? 'Registering...' : 'Submit Registration'}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                  <p className="text-center text-xs text-slate-400 font-medium">
+                    Your registration will be stored securely once submitted.
+                  </p>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}

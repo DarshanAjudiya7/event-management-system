@@ -1,9 +1,10 @@
 const express = require('express');
-const { createRegistration, getRegistrations } = require('../controllers/registrationController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { createRegistration, getRegistrations, getMyRegistrations } = require('../controllers/registrationController');
+const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
-router.post('/', createRegistration);
-router.get('/', protect, admin, getRegistrations);
+router.post('/', protect, createRegistration);
+router.get('/my', protect, getMyRegistrations);
+router.get('/', getRegistrations);
 
 module.exports = router;

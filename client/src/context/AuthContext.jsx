@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-    return data;
   };
 
   const register = async (name, email, password) => {
@@ -30,7 +29,6 @@ export const AuthProvider = ({ children }) => {
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-    return data;
   };
 
   const logout = () => {

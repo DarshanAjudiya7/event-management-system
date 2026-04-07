@@ -1,61 +1,52 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Event = require('./models/Event');
+const Registration = require('./models/Registration');
 
 dotenv.config();
 
 const events = [
   {
-    title: "Global Tech Summit 2026",
-    description: "Join industry leaders for a 3-day deep dive into the future of AI, Quantum Computing, and Sustainable Energy solutions.",
-    date: new Date("2026-05-15"),
-    status: "upcoming",
-    image: "https://images.unsplash.com/photo-1540575861501-7ad05823c951?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80"
+    title: 'Git/GitHub Workshop',
+    description: 'A completed hands-on workshop covering Git basics, branching strategies, pull requests, and practical GitHub collaboration workflows.',
+    date: new Date('2026-02-14T10:00:00Z'),
+    status: 'past',
+    totalRegistrations: 55,
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1170&q=80'
   },
   {
-    title: "Live: JavaScript Mastery Workshop",
-    description: "Interactive session on advanced React patterns, performance optimization, and the latest TC39 proposals.",
-    date: new Date(),
-    status: "live",
-    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80"
+    title: 'Supabase Workshop',
+    description: 'A completed workshop focused on authentication, PostgreSQL, storage, edge functions, and building full-stack apps with Supabase.',
+    date: new Date('2026-03-12T11:30:00Z'),
+    status: 'past',
+    totalRegistrations: 72,
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1170&q=80'
   },
   {
-    title: "Design Systems Expo 2025",
-    description: "A look back at the most influential design systems of the past year and how they shaped the modern web.",
-    date: new Date("2025-12-10"),
-    status: "past",
-    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80"
-  },
-  {
-    title: "Cyber Security Hackathon",
-    description: "48-hour intense competition focused on finding vulnerabilities in modern cloud architectures.",
-    date: new Date("2026-06-20"),
-    status: "upcoming",
-    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80"
-  },
-  {
-    title: "Sustainable Living Workshop",
-    description: "Learning the basics of zero-waste lifestyles and sustainable home systems in this live session.",
-    date: new Date(),
-    status: "live",
-    image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80"
+    title: 'Web Development Bootcamp',
+    description: 'An upcoming bootcamp designed to help students sharpen their React, Express, MongoDB, and deployment skills through project-based sessions.',
+    date: new Date('2026-05-20T09:30:00Z'),
+    status: 'upcoming',
+    totalRegistrations: 0,
+    image: 'https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=1170&q=80'
   }
 ];
 
 const seedDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("Connected to MongoDB for seeding...");
-    
+    console.log('Connected to MongoDB for seeding...');
+
+    await Registration.deleteMany({});
     await Event.deleteMany({});
-    console.log("Cleared old events.");
-    
+    console.log('Cleared old events and registrations.');
+
     await Event.insertMany(events);
-    console.log("Events Seeded Successfully!");
-    
-    process.exit();
+    console.log('Requested events seeded successfully.');
+
+    process.exit(0);
   } catch (error) {
-    console.error("Seeding Error:", error);
+    console.error('Seeding Error:', error);
     process.exit(1);
   }
 };

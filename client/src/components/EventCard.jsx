@@ -1,92 +1,98 @@
 import React from 'react';
-import { Calendar, ArrowRight, CheckCircle, Play, History, Users } from 'lucide-react';
+import { CalendarDays, ArrowRight, Lock, Clock3, Users, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const EventCard = ({ event, onRegister }) => {
-  const { title, description, date, status, image, registrationCount = 0 } = event;
+const EventCard = ({ event, onRegister, isRegistered = false }) => {
+  const { title, description, date, status, image, totalRegistrations = 0 } = event;
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'live': return <Play className="w-4 h-4" />;
-      case 'upcoming': return <Calendar className="w-4 h-4" />;
-      case 'past': return <History className="w-4 h-4" />;
-      default: return null;
-    }
-  };
+  const isPast = status === 'past';
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'live': return 'bg-emerald-100 text-emerald-600 ring-emerald-200';
-      case 'upcoming': return 'bg-blue-100 text-blue-600 ring-blue-200';
-      case 'past': return 'bg-slate-100 text-slate-500 ring-slate-200';
-      default: return 'bg-slate-100 text-slate-500 ring-slate-200';
+  const badgeStyles = isPast
+    ? 'bg-slate-100 text-slate-500 ring-slate-200'
+    : 'bg-blue-100 text-blue-600 ring-blue-200';
+
+  const renderButton = () => {
+    if (isPast) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="w-full rounded-2xl bg-slate-100 px-5 py-3.5 text-sm font-black text-slate-500 cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <Lock className="h-4 w-4" />
+          <span>Registration Closed</span>
+        </button>
+      );
     }
+
+    if (isRegistered) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="w-full rounded-2xl bg-emerald-50 px-5 py-3.5 text-sm font-black text-emerald-600 cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          <span>Already Registered</span>
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => onRegister(event)}
+        className="w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+      >
+        <span>Register Now</span>
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    );
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      whileHover={{ y: -12 }}
-      className="group relative bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 border border-slate-100"
+      whileHover={{ y: -8 }}
+      className="group overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
     >
-      {/* Image Container */}
       <div className="relative h-60 overflow-hidden">
         <img
           src={image || 'https://via.placeholder.com/600x400'}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           alt={title}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        {/* Status Badge */}
-        <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center space-x-2 ring-1 shadow-sm ${getStatusColor()}`}>
-          {getStatusIcon()}
-          <span>{status}</span>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/65 via-slate-900/10 to-transparent" />
+        <div className={`absolute left-4 top-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] ring-1 ${badgeStyles}`}>
+          {isPast ? <Clock3 className="h-3.5 w-3.5" /> : <CalendarDays className="h-3.5 w-3.5" />}
+          <span>{isPast ? 'Past Event' : 'Upcoming Event'}</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6">
-        <div className="flex items-center space-x-2 text-slate-400 text-xs font-semibold mb-3">
-          <Calendar className="w-3.5 h-3.5" />
-          <span>{new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+      <div className="p-6 lg:p-7">
+        <div className="mb-4 flex items-center justify-between gap-4 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+          <div className="inline-flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-blue-600" />
+            <span>{new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+          </div>
+          <div className="inline-flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-600" />
+            <span>{totalRegistrations} Registrations</span>
+          </div>
         </div>
-        
-        <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors leading-snug">
+
+        <h3 className="mb-3 text-2xl font-black leading-tight text-slate-900">
           {title}
         </h3>
-        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-6">
+        <p className="mb-6 text-sm leading-relaxed text-slate-500">
           {description}
         </p>
 
-        {registrationCount > 0 && (
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">
-            <Users className="h-3.5 w-3.5 text-blue-600" />
-            <span>{registrationCount} registrations</span>
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div className="flex items-center justify-between border-t border-slate-50 pt-5">
-          {status !== 'past' ? (
-            <button
-              onClick={() => onRegister(event)}
-              className="flex items-center space-x-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-95 transition-all w-full justify-center group/btn"
-            >
-              <span>Register Now</span>
-              <ArrowRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
-            </button>
-          ) : (
-            <div className="text-slate-400 text-xs font-bold italic flex items-center space-x-2 w-full justify-center py-2.5">
-              <span>Event Concluded</span>
-              <CheckCircle className="w-4 h-4 text-slate-300" />
-            </div>
-          )}
-        </div>
+        {renderButton()}
       </div>
-    </motion.div>
+    </motion.article>
   );
 };
 
