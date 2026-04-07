@@ -13,12 +13,9 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     { name: 'Events', path: '/events' },
+    { name: 'Dashboard', path: '/dashboard' },
     { name: 'Contact', path: '/contact' },
   ];
-
-  if (user) {
-    navLinks.push({ name: 'Dashboard', path: '/dashboard' });
-  }
 
   const handleLogout = () => {
     logout();

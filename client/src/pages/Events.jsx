@@ -68,11 +68,6 @@ const Events = () => {
       return;
     }
 
-    if (!user) {
-      setAuthPromptEvent(event);
-      return;
-    }
-
     if (registeredEventIds.includes(event._id)) {
       return;
     }
@@ -90,31 +85,36 @@ const Events = () => {
 
   const submitRegistration = async (e) => {
     e.preventDefault();
-    if (!selectedEvent) return;
+    console.log('Submitting registration with form data:', regForm);
+    if (!selectedEvent) {
+      console.warn('No event selected for registration.');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const { data } = await axios.post('/api/register', {
+      console.log('Targeting API /api/registrations for event:', selectedEvent._id);
+      const { data } = await axios.post('/api/registrations', {
         ...regForm,
         year: Number(regForm.year),
         eventId: selectedEvent._id,
       });
 
+      console.log('Registration Response:', data);
       setSuccessMessage(data.message || 'Registration successful.');
       setIsRegistering(false);
       setSelectedEvent(null);
-      await Promise.all([fetchEvents(), fetchMyRegistrations()]);
-      setRegForm((current) => ({ ...initialForm, name: user?.name || current.name || '' }));
+      
+      const fetchPromises = [fetchEvents()];
+      if (user) {
+        fetchPromises.push(fetchMyRegistrations());
+      }
+      await Promise.all(fetchPromises);
+      
+      setRegForm((current) => ({ ...initialForm, name: user?.name || '' }));
     } catch (error) {
       console.error('Registration failed:', error);
-
-      if (error.response?.status === 401) {
-        setIsRegistering(false);
-        setSelectedEvent(null);
-        setAuthPromptEvent(selectedEvent);
-      } else {
-        window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
-      }
+      window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -31,13 +31,16 @@ const EventDetails = () => {
   }, [id, user]);
 
   const handleBooking = async () => {
-    if (!user) return navigate('/login');
     try {
       await axios.post('/api/bookings', { eventId: id });
       setIsBooked(true);
       setStatus({ type: 'success', message: '🎉 Registration successful! Your ticket is confirmed.' });
     } catch (err) {
-      setStatus({ type: 'error', message: err.response?.data?.message || 'Failed to book event' });
+      if (err.response?.status === 401) {
+        navigate('/login');
+      } else {
+        setStatus({ type: 'error', message: err.response?.data?.message || 'Failed to book event' });
+      }
     }
   };
 

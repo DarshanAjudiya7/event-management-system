@@ -18,18 +18,13 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('events');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   
+  const isAdmin = user && user.role === 'admin';
+
   // Separate events by status
   const upcomingEvents = events.filter(e => e.status === 'upcoming');
   const pastEvents = events.filter(e => e.status === 'past');
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login', { state: { from: '/dashboard' } });
-    }
-  }, [authLoading, user, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
     fetchData();
   }, [user]);
 
@@ -46,7 +41,7 @@ const Dashboard = () => {
       console.error(err);
       setFeedback({
         type: 'error',
-        message: err.response?.data?.message || 'Unable to load dashboard data.'
+        message: 'Unable to load history data. Please check your connection.'
       });
     } finally {
       setLoading(false);
@@ -55,6 +50,7 @@ const Dashboard = () => {
 
   const handleCreateOrUpdate = async (e) => {
     e.preventDefault();
+    if (!isAdmin) return;
     try {
       if (editId) {
         await axios.put(`/api/events/${editId}`, eventData);
@@ -77,6 +73,7 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
         await axios.delete(`/api/events/${id}`);
@@ -93,6 +90,7 @@ const Dashboard = () => {
   };
 
   const startEdit = (event) => {
+    if (!isAdmin) return;
     setEditId(event._id);
     setEventData({ 
         title: event.title, 
@@ -105,7 +103,6 @@ const Dashboard = () => {
   };
 
   if (authLoading || (loading && events.length === 0)) return <Loader />;
-  if (!user) return null;
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
@@ -126,16 +123,20 @@ const Dashboard = () => {
              <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-500/30">
                <LayoutDashboard size={28} />
              </div>
-             <span>Admin Dashboard</span>
+             <span>{isAdmin ? 'Admin Dashboard' : 'Event History & Directory'}</span>
           </h2>
-          <p className="text-slate-500 font-medium">Control the pulses of your events and registrations.</p>
+          <p className="text-slate-500 font-medium">
+            {isAdmin ? 'Control the pulses of your events and registrations.' : 'View all event histories and student registration directory.'}
+          </p>
         </div>
-        <button 
-           onClick={() => { setEditId(null); setShowAddModal(true); }} 
-           className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95"
-        >
-          <Plus size={20} /> <span>Create Event</span>
-        </button>
+        {isAdmin && (
+          <button 
+             onClick={() => { setEditId(null); setShowAddModal(true); }} 
+             className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95"
+          >
+            <Plus size={20} /> <span>Create Event</span>
+          </button>
+        )}
       </header>
 
       {/* Stats Summary */}
@@ -203,7 +204,7 @@ const Dashboard = () => {
               <h3 className="text-2xl font-black text-slate-900">Upcoming Events</h3>
               <span className="ml-2 px-4 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-bold">{upcomingEvents.length}</span>
             </div>
-            {upcomingEvents.length > 0 ? (
+            {(upcomingEvents.length > 0) ? (
               <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
@@ -212,7 +213,7 @@ const Dashboard = () => {
                         <th className="px-8 py-6">Event Details</th>
                         <th className="px-8 py-6">Date & Time</th>
                         <th className="px-8 py-6">Registrations</th>
-                        <th className="px-8 py-6">Actions</th>
+                        {isAdmin && <th className="px-8 py-6">Actions</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -229,12 +230,14 @@ const Dashboard = () => {
                           </td>
                           <td className="px-8 py-6 font-medium text-slate-500 text-sm">{new Date(event.date).toLocaleDateString()} <br/> <span className="text-xs text-slate-400">{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></td>
                           <td className="px-8 py-6 font-bold text-blue-600 text-sm">{event.totalRegistrations || 0}</td>
-                          <td className="px-8 py-6">
-                            <div className="flex gap-3">
-                              <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
-                              <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
-                            </div>
-                          </td>
+                          {isAdmin && (
+                            <td className="px-8 py-6">
+                              <div className="flex gap-3">
+                                <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
+                                <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -243,7 +246,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm p-12 text-center">
-                <p className="text-slate-400 font-semibold">No upcoming events scheduled. Create one to get started!</p>
+                <p className="text-slate-400 font-semibold">No upcoming events scheduled.</p>
               </div>
             )}
           </div>
@@ -255,7 +258,7 @@ const Dashboard = () => {
               <h3 className="text-2xl font-black text-slate-900">Event History</h3>
               <span className="ml-2 px-4 py-1 bg-slate-100 text-slate-600 rounded-full text-sm font-bold">{pastEvents.length}</span>
             </div>
-            {pastEvents.length > 0 ? (
+            {(pastEvents.length > 0) ? (
               <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
@@ -264,7 +267,7 @@ const Dashboard = () => {
                         <th className="px-8 py-6">Event Details</th>
                         <th className="px-8 py-6">Event Date</th>
                         <th className="px-8 py-6">Registrations</th>
-                        <th className="px-8 py-6">Actions</th>
+                        {isAdmin && <th className="px-8 py-6">Actions</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -281,12 +284,14 @@ const Dashboard = () => {
                           </td>
                           <td className="px-8 py-6 font-medium text-slate-500 text-sm">{new Date(event.date).toLocaleDateString()} <br/> <span className="text-xs text-slate-400">{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></td>
                           <td className="px-8 py-6 font-bold text-slate-600 text-sm">{event.totalRegistrations || 0}</td>
-                          <td className="px-8 py-6">
-                            <div className="flex gap-3">
-                              <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
-                              <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
-                            </div>
-                          </td>
+                          {isAdmin && (
+                            <td className="px-8 py-6">
+                              <div className="flex gap-3">
+                                <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
+                                <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -295,7 +300,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm p-12 text-center">
-                <p className="text-slate-400 font-semibold">No past events yet. Check back after events conclude!</p>
+                <p className="text-slate-400 font-semibold">No past events yet.</p>
               </div>
             )}
           </div>
@@ -332,7 +337,7 @@ const Dashboard = () => {
 
       {/* Modal - for Add/Edit */}
       <AnimatePresence>
-        {showAddModal && (
+        {showAddModal && isAdmin && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
               <motion.div 
                  initial={{ opacity: 0 }} 
