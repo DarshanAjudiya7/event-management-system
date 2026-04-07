@@ -1,58 +1,72 @@
-# Event Management System 🚀
+# Event Management System
 
-A modern, full-stack event management platform built with React, Express, and MongoDB.
+A full-stack event management platform built with React, Express, and MongoDB.
 
-## Features ✨
+## Features
 
-*   **Dynamic Events Page**: Explore Past, Live, and Upcoming events with real-time filtering.
-*   **Student Registration**: Clean, secure registration modal with instant feedback.
-*   **Premium Design**: Blue and White theme with smooth animations from Framer Motion.
-*   **Responsive UI**: Fully mobile-optimized layouts for all pages.
-*   **MVC Architecture**: Clean, scalable backend following professional patterns.
-*   **Lucide Icons**: High-quality SVG icons throughout the platform.
+- Dynamic events page with live, upcoming, and past states
+- Student event registration flow
+- Admin-only dashboard for creating, editing, and deleting events
+- Responsive frontend built with Vite, Tailwind CSS, and Framer Motion
+- Express and MongoDB backend with JWT authentication
 
-## Tech Stack 🛠️
+## Tech Stack
 
-*   **Frontend**: React (Vite), Tailwind CSS, Framer Motion, Axios, React Router.
-*   **Backend**: Node.js, Express.js.
-*   **Database**: MongoDB (Mongoose).
+- Frontend: React, Vite, Tailwind CSS, Framer Motion, Axios, React Router
+- Backend: Node.js, Express.js
+- Database: MongoDB with Mongoose
 
-## Setup Instructions 📝
+## Local Setup
 
-### 1. Database Configuration
-Ensure you have MongoDB running locally or provide a cloud connection string in `server/.env`.
+### 1. Install dependencies
 
-### 2. Install Dependencies
-Open your terminal and run:
 ```bash
-# In the root directory
 npm run install-all
 ```
-*(Optionally run separately: `cd server && npm install`, then `cd client && npm install`)*
 
-### 3. Seed Sample Data
-Populate your database with sample events:
+### 2. Configure environment variables
+
+Create `server/.env` from [server/.env.example](/e:/event-management-system/server/.env.example).
+
+Create `client/.env` from [client/.env.example](/e:/event-management-system/client/.env.example) if you want to point the frontend at a custom backend URL.
+
+### 3. Seed sample events
+
 ```bash
 cd server
 node seed.js
 ```
 
-### 4. Run the Application
-Start both the client and server concurrently from the root:
+### 4. Run locally
+
 ```bash
 npm run dev
 ```
 
-The application will be available at:
-*   Frontend: [http://localhost:5173](http://localhost:5173)
-*   Backend: [http://localhost:5000](http://localhost:5000)
+Frontend runs at `http://localhost:5173` and backend runs at `http://localhost:5000`.
 
-## Design Palette 🎨
+## Deployment
 
-*   **Primary**: Blue (#2563eb)
-*   **Background**: White (#ffffff)
-*   **Text**: Slate (#1e293b)
-*   **Accents**: Indigo & Emerald for status indicators
+### Frontend
 
----
-**Contact Dev**: ajudiya7106@gmail.com | 9316099633
+Deploy the `client` folder to Vercel and set:
+
+```bash
+VITE_API_URL=https://your-backend-domain.com
+```
+
+### Backend
+
+Deploy the `server` folder to your Node host and set:
+
+```bash
+PORT=5000
+MONGO_URI=your-mongodb-connection-string
+JWT_SECRET=your-strong-jwt-secret
+CLIENT_URL=https://your-frontend-domain.vercel.app
+ADMIN_NAME=Your Name
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=your-strong-admin-password
+```
+
+When the backend starts, it automatically creates or syncs that admin account. Only that admin user can access the dashboard and manage events.

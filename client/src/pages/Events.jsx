@@ -42,6 +42,7 @@ const Events = () => {
         ...regForm,
         eventId: selectedEvent._id,
       });
+      await fetchEvents();
       setRegSuccess(true);
       setRegForm({ name: '', email: '', phone: '' });
       setTimeout(() => {

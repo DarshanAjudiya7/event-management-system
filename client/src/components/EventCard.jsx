@@ -1,9 +1,9 @@
 import React from 'react';
-import { Calendar, ArrowRight, CheckCircle, Play, History } from 'lucide-react';
+import { Calendar, ArrowRight, CheckCircle, Play, History, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const EventCard = ({ event, onRegister }) => {
-  const { title, description, date, status, image } = event;
+  const { title, description, date, status, image, registrationCount = 0 } = event;
 
   const getStatusIcon = () => {
     switch (status) {
@@ -60,6 +60,13 @@ const EventCard = ({ event, onRegister }) => {
         <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-6">
           {description}
         </p>
+
+        {registrationCount > 0 && (
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">
+            <Users className="h-3.5 w-3.5 text-blue-600" />
+            <span>{registrationCount} registrations</span>
+          </div>
+        )}
 
         {/* Buttons */}
         <div className="flex items-center justify-between border-t border-slate-50 pt-5">
