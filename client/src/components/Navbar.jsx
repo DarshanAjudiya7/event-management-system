@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const navLinks = [
@@ -13,8 +14,17 @@ const Navbar = () => {
     { name: 'About', path: '/about' },
     { name: 'Events', path: '/events' },
     { name: 'Contact', path: '/contact' },
-    { name: 'Dashboard', path: '/dashboard' },
   ];
+
+  if (user) {
+    navLinks.push({ name: 'Dashboard', path: '/dashboard' });
+  }
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -47,7 +57,7 @@ const Navbar = () => {
               <>
                 <span className="text-sm font-semibold text-slate-500">{user.name}</span>
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-slate-700 shadow-lg shadow-slate-900/10 active:scale-95 transition-all"
                 >
                   Logout
@@ -107,10 +117,7 @@ const Navbar = () => {
             <div className="pt-4 border-t border-slate-50">
               {user ? (
                 <button
-                  onClick={() => {
-                    logout();
-                    setIsOpen(false);
-                  }}
+                  onClick={handleLogout}
                   className="block w-full bg-slate-900 text-white py-3 rounded-xl text-center font-semibold hover:bg-slate-700"
                 >
                   Logout

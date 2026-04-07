@@ -5,6 +5,6 @@ const router = express.Router();
 
 router.post('/', protect, createRegistration);
 router.get('/my', protect, getMyRegistrations);
-router.get('/', getRegistrations);
+router.get('/', protect, getRegistrations);
 
 module.exports = router;

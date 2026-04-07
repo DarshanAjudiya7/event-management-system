@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit, Trash2, Users, Calendar, LayoutDashboard, X, CheckCircle, Info, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,10 +16,22 @@ const Dashboard = () => {
   const [eventData, setEventData] = useState({ title: '', description: '', date: '', status: 'upcoming', image: '' });
   const [editId, setEditId] = useState(null);
   const [activeTab, setActiveTab] = useState('events');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+  
+  // Separate events by status
+  const upcomingEvents = events.filter(e => e.status === 'upcoming');
+  const pastEvents = events.filter(e => e.status === 'past');
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login', { state: { from: '/dashboard' } });
+    }
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -26,8 +42,12 @@ const Dashboard = () => {
       ]);
       setEvents(eventsRes.data);
       setRegistrations(regsRes.data);
-    } catch (err) { 
-      console.error(err); 
+    } catch (err) {
+      console.error(err);
+      setFeedback({
+        type: 'error',
+        message: err.response?.data?.message || 'Unable to load dashboard data.'
+      });
     } finally {
       setLoading(false);
     }
@@ -38,22 +58,37 @@ const Dashboard = () => {
     try {
       if (editId) {
         await axios.put(`/api/events/${editId}`, eventData);
+        setFeedback({ type: 'success', message: 'Event updated successfully.' });
       } else {
         await axios.post('/api/events', eventData);
+        setFeedback({ type: 'success', message: 'Event published successfully.' });
       }
       fetchData();
       setShowAddModal(false);
       setEditId(null);
       setEventData({ title: '', description: '', date: '', status: 'upcoming', image: '' });
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      setFeedback({
+        type: 'error',
+        message: err.response?.data?.message || 'Unable to publish this event.'
+      });
+    }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
         await axios.delete(`/api/events/${id}`);
+        setFeedback({ type: 'success', message: 'Event removed successfully.' });
         fetchData();
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+        setFeedback({
+          type: 'error',
+          message: err.response?.data?.message || 'Unable to delete this event.'
+        });
+      }
     }
   };
 
@@ -69,10 +104,22 @@ const Dashboard = () => {
     setShowAddModal(true);
   };
 
-  if (loading && events.length === 0) return <Loader />;
+  if (authLoading || (loading && events.length === 0)) return <Loader />;
+  if (!user) return null;
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
+      {feedback.message && (
+        <div className={`mb-8 flex items-center gap-3 rounded-3xl px-5 py-4 shadow-sm border ${
+          feedback.type === 'success'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-red-200 bg-red-50 text-red-700'
+        }`}>
+          {feedback.type === 'success' ? <CheckCircle size={18} /> : <Info size={18} />}
+          <span className="font-semibold">{feedback.message}</span>
+        </div>
+      )}
+
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div className="space-y-2">
           <h2 className="text-3xl lg:text-4xl font-black text-slate-900 flex items-center gap-3">
@@ -92,7 +139,7 @@ const Dashboard = () => {
       </header>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
           <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center">
             <Calendar size={32} />
@@ -104,6 +151,15 @@ const Dashboard = () => {
         </div>
         <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center">
+            <Calendar size={32} />
+          </div>
+          <div>
+            <h4 className="text-3xl font-black text-slate-900 leading-none mb-1">{upcomingEvents.length}</h4>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest leading-none">Upcoming Events</p>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-slate-50 text-slate-600 rounded-3xl flex items-center justify-center">
             <Users size={32} />
           </div>
           <div>
@@ -139,47 +195,109 @@ const Dashboard = () => {
       </div>
 
       {activeTab === 'events' ? (
-        <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-50 text-slate-400 font-bold uppercase text-xs tracking-widest">
-                  <th className="px-8 py-6">Event Details</th>
-                  <th className="px-8 py-6">Date</th>
-                  <th className="px-8 py-6">Status</th>
-                  <th className="px-8 py-6">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {events.map((event) => (
-                  <tr key={event._id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                       <div className="flex items-center gap-4">
-                          <img src={event.image} className="w-12 h-12 rounded-xl object-cover" />
-                          <div>
-                             <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase text-sm tracking-tight">{event.title}</p>
-                             <p className="text-xs text-slate-400 truncate max-w-[200px]">{event.description}</p>
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6 font-medium text-slate-500 text-sm italic">{new Date(event.date).toLocaleDateString()}</td>
-                    <td className="px-8 py-6">
-                       <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${
-                           event.status === 'upcoming' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
-                       }`}>
-                           {event.status}
-                       </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex gap-3">
-                        <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
-                        <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="space-y-12">
+          {/* Upcoming Events Section */}
+          <div>
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
+              <h3 className="text-2xl font-black text-slate-900">Upcoming Events</h3>
+              <span className="ml-2 px-4 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-bold">{upcomingEvents.length}</span>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-50 text-slate-400 font-bold uppercase text-xs tracking-widest">
+                        <th className="px-8 py-6">Event Details</th>
+                        <th className="px-8 py-6">Date & Time</th>
+                        <th className="px-8 py-6">Registrations</th>
+                        <th className="px-8 py-6">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {upcomingEvents.map((event) => (
+                        <tr key={event._id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-8 py-6">
+                             <div className="flex items-center gap-4">
+                                <img src={event.image} className="w-12 h-12 rounded-xl object-cover" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'} />
+                                <div>
+                                   <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase text-sm tracking-tight">{event.title}</p>
+                                   <p className="text-xs text-slate-400 truncate max-w-[300px]">{event.description}</p>
+                                </div>
+                             </div>
+                          </td>
+                          <td className="px-8 py-6 font-medium text-slate-500 text-sm">{new Date(event.date).toLocaleDateString()} <br/> <span className="text-xs text-slate-400">{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></td>
+                          <td className="px-8 py-6 font-bold text-blue-600 text-sm">{event.totalRegistrations || 0}</td>
+                          <td className="px-8 py-6">
+                            <div className="flex gap-3">
+                              <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
+                              <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm p-12 text-center">
+                <p className="text-slate-400 font-semibold">No upcoming events scheduled. Create one to get started!</p>
+              </div>
+            )}
+          </div>
+
+          {/* Past Events History Section */}
+          <div>
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-2 h-8 bg-slate-400 rounded-full"></div>
+              <h3 className="text-2xl font-black text-slate-900">Event History</h3>
+              <span className="ml-2 px-4 py-1 bg-slate-100 text-slate-600 rounded-full text-sm font-bold">{pastEvents.length}</span>
+            </div>
+            {pastEvents.length > 0 ? (
+              <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-50 text-slate-400 font-bold uppercase text-xs tracking-widest">
+                        <th className="px-8 py-6">Event Details</th>
+                        <th className="px-8 py-6">Event Date</th>
+                        <th className="px-8 py-6">Registrations</th>
+                        <th className="px-8 py-6">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {pastEvents.map((event) => (
+                        <tr key={event._id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-8 py-6">
+                             <div className="flex items-center gap-4">
+                                <img src={event.image} className="w-12 h-12 rounded-xl object-cover opacity-75" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'} />
+                                <div>
+                                   <p className="font-bold text-slate-800 group-hover:text-slate-600 transition-colors uppercase text-sm tracking-tight">{event.title}</p>
+                                   <p className="text-xs text-slate-400 truncate max-w-[300px]">{event.description}</p>
+                                </div>
+                             </div>
+                          </td>
+                          <td className="px-8 py-6 font-medium text-slate-500 text-sm">{new Date(event.date).toLocaleDateString()} <br/> <span className="text-xs text-slate-400">{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></td>
+                          <td className="px-8 py-6 font-bold text-slate-600 text-sm">{event.totalRegistrations || 0}</td>
+                          <td className="px-8 py-6">
+                            <div className="flex gap-3">
+                              <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
+                              <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm p-12 text-center">
+                <p className="text-slate-400 font-semibold">No past events yet. Check back after events conclude!</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (

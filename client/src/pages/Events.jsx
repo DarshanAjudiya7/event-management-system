@@ -125,7 +125,6 @@ const Events = () => {
 
   const categories = [
     { id: 'all', label: 'All Events' },
-    { id: 'live', label: 'Live Events' },
     { id: 'upcoming', label: 'Upcoming' },
     { id: 'past', label: 'Past' },
   ];

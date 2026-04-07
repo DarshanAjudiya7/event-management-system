@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
+const ensureDefaultEvents = require('./utils/ensureDefaultEvents');
 
 dotenv.config();
 
@@ -18,7 +19,11 @@ app.use(cors());
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(async () => {
+    console.log('MongoDB connected successfully');
+    await ensureDefaultEvents();
+    console.log('Default events ensured successfully');
+  })
   .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes

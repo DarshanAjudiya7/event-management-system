@@ -30,12 +30,11 @@ npm run install-all
 ```
 *(Optionally run separately: `cd server && npm install`, then `cd client && npm install`)*
 
-### 3. Seed Sample Data
-Populate your database with sample events:
-```bash
-cd server
-node seed.js
-```
+### 3. Default Events
+The backend automatically ensures these MongoDB events on startup:
+- `Git/Github` with `55` registrations
+- `Supabase` with `72` registrations
+- `Web Development Bootcamp` with `0` registrations initially
 
 ### 4. Run the Application
 Start both the client and server concurrently from the root:
