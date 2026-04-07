@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Edit, Trash2, Users, Calendar, MapPin, DollarSign, Package, LayoutDashboard, ChevronRight, CheckCircle, Info } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Calendar, LayoutDashboard, X, CheckCircle, Info, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Loader from '../components/Loader';
 
 const Dashboard = () => {
   const [events, setEvents] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [eventData, setEventData] = useState({ title: '', description: '', date: '', location: '', price: '', category: 'unclassified', image: '' });
+  const [eventData, setEventData] = useState({ title: '', description: '', date: '', status: 'upcoming', image: '' });
   const [editId, setEditId] = useState(null);
   const [activeTab, setActiveTab] = useState('events');
 
@@ -16,15 +18,19 @@ const Dashboard = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [eventsRes, bookingsRes] = await Promise.all([
+      const [eventsRes, regsRes] = await Promise.all([
         axios.get('/api/events'),
-        axios.get('/api/bookings/allBookings')
+        axios.get('/api/registrations')
       ]);
       setEvents(eventsRes.data);
-      setBookings(bookingsRes.data);
-    } catch (err) { console.error(err); }
-    setLoading(false);
+      setRegistrations(regsRes.data);
+    } catch (err) { 
+      console.error(err); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateOrUpdate = async (e) => {
@@ -38,7 +44,7 @@ const Dashboard = () => {
       fetchData();
       setShowAddModal(false);
       setEditId(null);
-      setEventData({ title: '', description: '', date: '', location: '', price: '', category: 'unclassified', image: '' });
+      setEventData({ title: '', description: '', date: '', status: 'upcoming', image: '' });
     } catch (err) { console.error(err); }
   };
 
@@ -53,174 +59,252 @@ const Dashboard = () => {
 
   const startEdit = (event) => {
     setEditId(event._id);
-    setEventData({ ...event, date: new Date(event.date).toISOString().slice(0, 16) });
+    setEventData({ 
+        title: event.title, 
+        description: event.description, 
+        date: new Date(event.date).toISOString().slice(0, 16), 
+        status: event.status, 
+        image: event.image 
+    });
     setShowAddModal(true);
   };
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading Dashboard...</div>;
+  if (loading && events.length === 0) return <Loader />;
 
   return (
-    <div style={{ padding: '40px 0' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <LayoutDashboard size={40} color="var(--primary)" /> Admin Control Center
+    <div className="container mx-auto px-4 py-12 lg:py-20">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="space-y-2">
+          <h2 className="text-3xl lg:text-4xl font-black text-slate-900 flex items-center gap-3">
+             <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-500/30">
+               <LayoutDashboard size={28} />
+             </div>
+             <span>Admin Dashboard</span>
           </h2>
-          <p style={{ color: 'var(--text-muted)' }}>Manage your platform's growth and event library.</p>
+          <p className="text-slate-500 font-medium">Control the pulses of your events and registrations.</p>
         </div>
-        <button onClick={() => { setEditId(null); setShowAddModal(!showAddModal); }} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Plus size={20} /> Create New Event
+        <button 
+           onClick={() => { setEditId(null); setShowAddModal(true); }} 
+           className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95"
+        >
+          <Plus size={20} /> <span>Create Event</span>
         </button>
       </header>
 
-      {/* Stats Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-        <div className="glass" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '15px', borderRadius: '16px' }}>
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center">
             <Calendar size={32} />
           </div>
           <div>
-            <h4 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{events.length}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total Events</p>
+            <h4 className="text-3xl font-black text-slate-900 leading-none mb-1">{events.length}</h4>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest leading-none">Global Events</p>
           </div>
         </div>
-        <div className="glass" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '15px', borderRadius: '16px' }}>
+        <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center">
             <Users size={32} />
           </div>
           <div>
-            <h4 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{bookings.length}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total Bookings</p>
+            <h4 className="text-3xl font-black text-slate-900 leading-none mb-1">{registrations.length}</h4>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest leading-none">Registered Students</p>
           </div>
         </div>
-        <div className="glass" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '15px', borderRadius: '16px' }}>
-            <Package size={32} />
-          </div>
+        <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
+           <button onClick={fetchData} className="w-16 h-16 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all active:rotate-180">
+            <RefreshCw size={28} />
+          </button>
           <div>
-            <h4 style={{ fontSize: '1.2rem', fontWeight: 700 }}>${bookings.reduce((sum, b) => sum + (b.eventId.price || 0), 0)}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total Revenue</p>
+            <h4 className="text-xl font-bold text-slate-800 leading-none mb-1">Live Sync</h4>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest leading-none">Last Checked: Just Now</p>
           </div>
         </div>
       </div>
 
-      {/* Admin Tabs */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-        <button onClick={() => setActiveTab('events')} style={{ padding: '10px 25px', background: activeTab === 'events' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: 600 }}>Manage Events</button>
-        <button onClick={() => setActiveTab('bookings')} style={{ padding: '10px 25px', background: activeTab === 'bookings' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: 600 }}>Manage Bookings</button>
+      {/* Navigation Tabs */}
+      <div className="flex gap-4 mb-8">
+        <button 
+           onClick={() => setActiveTab('events')} 
+           className={`px-8 py-3 rounded-2xl font-bold transition-all ${activeTab === 'events' ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20' : 'bg-white text-slate-500 border border-slate-100'}`}
+        >
+            Events Library
+        </button>
+        <button 
+           onClick={() => setActiveTab('regs')} 
+           className={`px-8 py-3 rounded-2xl font-bold transition-all ${activeTab === 'regs' ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20' : 'bg-white text-slate-500 border border-slate-100'}`}
+        >
+            Student Directory
+        </button>
       </div>
 
       {activeTab === 'events' ? (
-        <div className="glass" style={{ padding: '30px', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '15px' }}>Event Name</th>
-                <th style={{ padding: '15px' }}>Date</th>
-                <th style={{ padding: '15px' }}>Location</th>
-                <th style={{ padding: '15px' }}>Price</th>
-                <th style={{ padding: '15px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((event) => (
-                <tr key={event._id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '15px', fontWeight: 600 }}>{event.title}</td>
-                  <td style={{ padding: '15px' }}>{new Date(event.date).toLocaleDateString()}</td>
-                  <td style={{ padding: '15px' }}>{event.location}</td>
-                  <td style={{ padding: '15px' }}>${event.price}</td>
-                  <td style={{ padding: '15px' }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button onClick={() => startEdit(event)} style={{ padding: '8px', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }}><Edit size={18} /></button>
-                      <button onClick={() => handleDelete(event._id)} style={{ padding: '8px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}><Trash2 size={18} /></button>
-                    </div>
-                  </td>
+        <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-50 text-slate-400 font-bold uppercase text-xs tracking-widest">
+                  <th className="px-8 py-6">Event Details</th>
+                  <th className="px-8 py-6">Date</th>
+                  <th className="px-8 py-6">Status</th>
+                  <th className="px-8 py-6">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {events.map((event) => (
+                  <tr key={event._id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-6">
+                       <div className="flex items-center gap-4">
+                          <img src={event.image} className="w-12 h-12 rounded-xl object-cover" />
+                          <div>
+                             <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase text-sm tracking-tight">{event.title}</p>
+                             <p className="text-xs text-slate-400 truncate max-w-[200px]">{event.description}</p>
+                          </div>
+                       </div>
+                    </td>
+                    <td className="px-8 py-6 font-medium text-slate-500 text-sm italic">{new Date(event.date).toLocaleDateString()}</td>
+                    <td className="px-8 py-6">
+                       <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${
+                           event.status === 'live' ? 'bg-emerald-100 text-emerald-600' :
+                           event.status === 'upcoming' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                       }`}>
+                           {event.status}
+                       </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex gap-3">
+                        <button onClick={() => startEdit(event)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Edit size={18} /></button>
+                        <button onClick={() => handleDelete(event._id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
-        <div className="glass" style={{ padding: '30px', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '15px', textAlign: 'left' }}>User Email</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Event</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Booked On</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking) => (
-                <tr key={booking._id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '15px' }}>{booking.userId.email}</td>
-                  <td style={{ padding: '15px', fontWeight: 600 }}>{booking.eventId.title}</td>
-                  <td style={{ padding: '15px' }}>{new Date(booking.bookingDate).toLocaleDateString()}</td>
-                  <td style={{ padding: '15px' }}><span style={{ color: '#10b981' }}>{booking.status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white border border-slate-100 rounded-[40px] shadow-sm overflow-hidden">
+           <div className="overflow-x-auto">
+             <table className="w-full text-left">
+               <thead>
+                 <tr className="border-b border-slate-50 text-slate-400 font-bold uppercase text-xs tracking-widest">
+                   <th className="px-8 py-6">Student Info</th>
+                   <th className="px-8 py-6">Event Selected</th>
+                   <th className="px-8 py-6">Registered On</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-50">
+                 {registrations.map((reg) => (
+                   <tr key={reg._id} className="hover:bg-slate-50/50 transition-colors">
+                     <td className="px-8 py-6">
+                        <p className="font-bold text-slate-800 uppercase text-sm tracking-tight">{reg.name}</p>
+                        <p className="text-xs text-slate-400">{reg.email} | {reg.phone}</p>
+                     </td>
+                     <td className="px-8 py-6 font-bold text-blue-600 text-xs uppercase tracking-widest">{reg.eventId?.title || 'Unknown Event'}</td>
+                     <td className="px-8 py-6 text-slate-500 text-sm italic">{new Date(reg.createdAt).toLocaleDateString()}</td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
         </div>
       )}
 
       {/* Modal - for Add/Edit */}
-      {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="glass" style={{ width: '90%', maxWidth: '600px', padding: '40px', position: 'relative' }}>
-            <h3 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '30px' }}>{editId ? 'Modify Event' : 'Create New Event'}</h3>
-            <form onSubmit={handleCreateOrUpdate}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div className="input-group">
-                  <label>Title</label>
-                  <input type="text" value={eventData.title} onChange={(e) => setEventData({ ...eventData, title: e.target.value })} required />
-                </div>
-                <div className="input-group">
-                  <label>Category</label>
-                  <select 
-                    style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
-                    value={eventData.category} 
-                    onChange={(e) => setEventData({ ...eventData, category: e.target.value })}
-                  >
-                    <option value="music">Music</option>
-                    <option value="tech">Tech</option>
-                    <option value="sports">Sports</option>
-                    <option value="arts">Arts</option>
-                    <option value="unclassified">Other</option>
-                  </select>
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Description</label>
-                <textarea style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} rows="3" value={eventData.description} onChange={(e) => setEventData({ ...eventData, description: e.target.value })} required />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div className="input-group">
-                  <label>Date & Time</label>
-                  <input type="datetime-local" value={eventData.date} onChange={(e) => setEventData({ ...eventData, date: e.target.value })} required />
-                </div>
-                <div className="input-group">
-                  <label>Price ($)</label>
-                  <input type="number" value={eventData.price} onChange={(e) => setEventData({ ...eventData, price: e.target.value })} required />
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Location</label>
-                <input type="text" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} required />
-              </div>
-              <div className="input-group">
-                <label>Image URL (optional)</label>
-                <input type="text" value={eventData.image} onChange={(e) => setEventData({ ...eventData, image: e.target.value })} placeholder="https://unsplash..." />
-              </div>
-              <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }}>{editId ? 'Save Changes' : 'Publish Event'}</button>
-                <button type="button" onClick={() => setShowAddModal(false)} className="glass" style={{ flex: 1, padding: '12px' }}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showAddModal && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                 initial={{ opacity: 0 }} 
+                 animate={{ opacity: 1 }} 
+                 exit={{ opacity: 0 }} 
+                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" 
+                 onClick={() => setShowAddModal(false)} 
+              />
+              <motion.div 
+                 initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+                 animate={{ scale: 1, opacity: 1, y: 0 }} 
+                 exit={{ scale: 0.95, opacity: 0, y: 20 }} 
+                 className="relative bg-white w-full max-w-2xl rounded-[40px] shadow-2xl p-10 lg:p-12"
+              >
+                  <div className="flex items-center justify-between mb-8">
+                     <h3 className="text-3xl font-black text-slate-900">{editId ? 'Modify Event Entry' : 'Create New Event'}</h3>
+                     <button onClick={() => setShowAddModal(false)} className="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-600"><X /></button>
+                  </div>
+
+                  <form onSubmit={handleCreateOrUpdate} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1">Event Title</label>
+                          <input 
+                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none" 
+                             type="text" 
+                             value={eventData.title} 
+                             onChange={(e) => setEventData({ ...eventData, title: e.target.value })} 
+                             required 
+                             placeholder="E.g. Tech Hackathon 2026"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1">Current Status</label>
+                          <select 
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                            value={eventData.status} 
+                            onChange={(e) => setEventData({ ...eventData, status: e.target.value })}
+                          >
+                            <option value="upcoming">Upcoming</option>
+                            <option value="live">Live</option>
+                            <option value="past">Past</option>
+                          </select>
+                       </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase ml-1">Short Description</label>
+                      <textarea 
+                         className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none resize-none" 
+                         rows="3" 
+                         value={eventData.description} 
+                         onChange={(e) => setEventData({ ...eventData, description: e.target.value })} 
+                         required 
+                         placeholder="What's this event about?"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1">Date & Time</label>
+                          <input 
+                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none" 
+                             type="datetime-local" 
+                             value={eventData.date} 
+                             onChange={(e) => setEventData({ ...eventData, date: e.target.value })} 
+                             required 
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1">Hero Image URL</label>
+                          <input 
+                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none" 
+                             type="text" 
+                             value={eventData.image} 
+                             onChange={(e) => setEventData({ ...eventData, image: e.target.value })} 
+                             placeholder="https://images.unsplash.com/..." 
+                          />
+                       </div>
+                    </div>
+
+                    <div className="pt-4 flex gap-4">
+                       <button type="submit" className="flex-1 bg-blue-600 text-white py-5 rounded-3xl font-black hover:bg-blue-700 shadow-xl shadow-blue-500/30 transition-all active:scale-95">
+                          {editId ? 'Update Record' : 'Publish to Portal'}
+                       </button>
+                    </div>
+                  </form>
+              </motion.div>
+           </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -11,7 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/events');
+        const { data } = await axios.get('/api/events');
         setFeaturedEvents(data.slice(0, 3));
       } catch (error) {
         console.error('Error fetching events:', error);

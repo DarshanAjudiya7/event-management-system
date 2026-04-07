@@ -21,7 +21,7 @@ const Events = () => {
 
   const fetchEvents = async () => {
     try {
-      const { data } = await axios.get('http://localhost:5000/api/events');
+      const { data } = await axios.get('/api/events');
       setEvents(data);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -38,7 +38,7 @@ const Events = () => {
   const submitRegistration = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/registrations', {
+      await axios.post('/api/registrations', {
         ...regForm,
         eventId: selectedEvent._id,
       });
