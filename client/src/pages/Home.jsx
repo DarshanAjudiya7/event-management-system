@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { ArrowRight, Sparkles, Rocket, Users, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Rocket, Users, ShieldCheck, Zap, Calendar } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import axios from 'axios';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Users, History, CheckServer, CalendarHeart } from 'lucide-react';
+import { Mail, Users, History, CalendarHeart } from 'lucide-react';
 
 const About = () => {
     return (
