@@ -31,17 +31,23 @@ const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [eventsRes, regsRes] = await Promise.all([
-        axios.get('/api/events'),
-        axios.get('/api/registrations')
-      ]);
+      const eventsRes = await axios.get('/api/events');
       setEvents(eventsRes.data);
-      setRegistrations(regsRes.data);
+
+      try {
+        const regsRes = await axios.get('/api/registrations');
+        setRegistrations(regsRes.data);
+      } catch (regErr) {
+        console.error(regErr);
+        setRegistrations([]);
+      }
     } catch (err) {
       console.error(err);
+      setEvents([]);
+      setRegistrations([]);
       setFeedback({
         type: 'error',
-        message: 'Unable to load history data. Please check your connection.'
+        message: 'Unable to load events. Please check your backend connection.'
       });
     } finally {
       setLoading(false);

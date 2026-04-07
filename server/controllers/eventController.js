@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const ensureDefaultEvents = require('../utils/ensureDefaultEvents');
 
 exports.createEvent = async (req, res) => {
   const { title, description, date, status, image, totalRegistrations } = req.body;
@@ -19,6 +20,7 @@ exports.createEvent = async (req, res) => {
 
 exports.getEvents = async (req, res) => {
   try {
+    await ensureDefaultEvents();
     const events = await Event.find({}).sort({ date: -1 });
     res.json(events);
   } catch (error) {
