@@ -67,6 +67,7 @@ CLIENT_URL=https://your-frontend-domain.vercel.app
 ADMIN_NAME=Your Name
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=your-strong-admin-password
+SEED_DEFAULT_EVENTS=true
 ```
 
-When the backend starts, it automatically creates or syncs that admin account. Only that admin user can access the dashboard and manage events.
+When the backend starts, it automatically creates or syncs that admin account and ensures the default Supabase, Git/GitHub, and GitHub Copilot events exist in the database.

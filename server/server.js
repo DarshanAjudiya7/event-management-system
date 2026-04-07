@@ -7,6 +7,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const ensureAdminUser = require('./utils/ensureAdminUser');
+const ensureDefaultEvents = require('./utils/ensureDefaultEvents');
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ const startServer = async () => {
     console.log('MongoDB connected successfully');
 
     await ensureAdminUser();
+    await ensureDefaultEvents();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
