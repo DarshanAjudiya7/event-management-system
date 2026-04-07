@@ -11,6 +11,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const redirectTo = location.state?.from || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate(location.state?.from || '/');
+      navigate(redirectTo);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
@@ -63,7 +64,7 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••"
+              placeholder="Enter your password"
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             />
           </div>
@@ -78,7 +79,7 @@ const Login = () => {
         </form>
 
         <p className="mt-7 text-center text-slate-500">
-          Don't have an account? <Link to="/register" className="font-bold text-blue-600">Create one</Link>
+          Don't have an account? <Link to="/register" state={{ from: redirectTo }} className="font-bold text-blue-600">Create one</Link>
         </p>
       </div>
     </div>

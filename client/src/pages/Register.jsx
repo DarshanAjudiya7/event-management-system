@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, User, Mail, Lock, AlertCircle } from 'lucide-react';
 
@@ -9,6 +9,8 @@ const Register = () => {
   const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/';
 
   const handleChange = (e) => {
     setError('');
@@ -24,7 +26,7 @@ const Register = () => {
     setSubmitting(true);
     try {
       await register(formData.name, formData.email, formData.password);
-      navigate('/');
+      navigate(redirectTo);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -85,7 +87,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="••••••••"
+                placeholder="Create a password"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
@@ -98,7 +100,7 @@ const Register = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
-                placeholder="••••••••"
+                placeholder="Confirm password"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
@@ -114,7 +116,7 @@ const Register = () => {
         </form>
 
         <p className="mt-7 text-center text-slate-500">
-          Already have an account? <Link to="/login" className="font-bold text-blue-600">Login here</Link>
+          Already have an account? <Link to="/login" state={{ from: redirectTo }} className="font-bold text-blue-600">Login here</Link>
         </p>
       </div>
     </div>

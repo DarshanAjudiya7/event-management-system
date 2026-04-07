@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, CheckCircle, Calendar, Info, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, X, CheckCircle, Info, ArrowRight, ShieldCheck, LogIn, UserPlus } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,7 @@ const Events = () => {
   const [regForm, setRegForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [authPromptEvent, setAuthPromptEvent] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -68,8 +69,7 @@ const Events = () => {
     }
 
     if (!user) {
-      window.alert('Please login first to register for an event.');
-      navigate('/login', { state: { from: '/events' } });
+      setAuthPromptEvent(event);
       return;
     }
 
@@ -107,7 +107,14 @@ const Events = () => {
       setRegForm((current) => ({ ...initialForm, name: user?.name || current.name || '' }));
     } catch (error) {
       console.error('Registration failed:', error);
-      window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
+
+      if (error.response?.status === 401) {
+        setIsRegistering(false);
+        setSelectedEvent(null);
+        setAuthPromptEvent(selectedEvent);
+      } else {
+        window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +146,7 @@ const Events = () => {
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Explore Our Events</h1>
               <p className="text-slate-500 font-medium max-w-xl text-lg">
-                Browse through past, live, and upcoming experiences curated for you.
+                Browse through past and upcoming experiences curated for you.
               </p>
             </div>
 
@@ -208,6 +215,68 @@ const Events = () => {
       </div>
 
       <AnimatePresence>
+        {authPromptEvent && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAuthPromptEvent(null)}
+              className="absolute inset-0 bg-slate-900/45 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 20 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-[36px] border border-slate-100 bg-white shadow-2xl"
+            >
+              <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 p-8 text-white">
+                <div className="mb-4 inline-flex rounded-2xl bg-white/15 p-3 backdrop-blur-sm">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
+                <h3 className="text-3xl font-black leading-tight">Login Required</h3>
+                <p className="mt-3 max-w-md text-sm font-medium text-blue-50">
+                  Please sign in or create an account before registering for <span className="font-black">{authPromptEvent.title}</span>.
+                </p>
+              </div>
+
+              <div className="space-y-6 p-8">
+                <div className="rounded-3xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm font-medium text-slate-600">
+                  Your registration details will be saved securely in MongoDB after authentication.
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <NavLink
+                    to="/login"
+                    state={{ from: '/events' }}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-700"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Login Now</span>
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    state={{ from: '/events' }}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-700 transition-all hover:border-blue-200 hover:text-blue-600"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Create Account</span>
+                  </NavLink>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAuthPromptEvent(null)}
+                  className="w-full rounded-2xl bg-slate-100 px-5 py-3.5 text-sm font-bold text-slate-500 transition-all hover:bg-slate-200"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {isRegistering && selectedEvent && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div

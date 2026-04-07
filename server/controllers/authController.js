@@ -20,6 +20,7 @@ exports.register = async (req, res) => {
       token: generateToken(user._id, user.role)
     });
   } catch (error) {
+    console.error('Registration Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
