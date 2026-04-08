@@ -12,15 +12,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const DB_NAME = process.env.MONGO_DB_NAME || 'test';
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 
 // Database connection
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  dbName: DB_NAME,
+  serverSelectionTimeoutMS: 5000,
+})
   .then(async () => {
-    console.log('MongoDB connected successfully');
+    console.log(`MongoDB connected successfully to database: ${DB_NAME}`);
     await ensureDefaultEvents();
     console.log('Default events ensured successfully');
   })

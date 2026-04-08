@@ -1,8 +1,8 @@
 import React from 'react';
-import { CalendarDays, ArrowRight, Lock, Clock3, Users, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, ArrowRight, Lock, Clock3, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const EventCard = ({ event, onRegister, isRegistered = false }) => {
+const EventCard = ({ event, onRegister }) => {
   const { title, description, date, status, image, totalRegistrations = 0 } = event;
 
   const isPast = status === 'past';
@@ -21,19 +21,6 @@ const EventCard = ({ event, onRegister, isRegistered = false }) => {
         >
           <Lock className="h-4 w-4" />
           <span>Registration Closed</span>
-        </button>
-      );
-    }
-
-    if (isRegistered) {
-      return (
-        <button
-          type="button"
-          disabled
-          className="w-full rounded-2xl bg-emerald-50 px-5 py-3.5 text-sm font-black text-emerald-600 cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Already Registered</span>
         </button>
       );
     }

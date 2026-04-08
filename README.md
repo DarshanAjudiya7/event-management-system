@@ -114,6 +114,7 @@ Create `server/.env` and add:
 ```env
 PORT=5000
 MONGO_URI=your-mongodb-connection-string
+MONGO_DB_NAME=test
 JWT_SECRET=your-secret-key
 NODE_ENV=development
 ```
@@ -122,6 +123,7 @@ Note:
 
 - `JWT_SECRET` is still used by the backend auth code that exists in the API layer.
 - The frontend no longer uses login/signup screens.
+- If you use MongoDB Atlas, add your current machine IP in Atlas `Network Access` before testing registrations.
 
 ### 3. Start the app
 

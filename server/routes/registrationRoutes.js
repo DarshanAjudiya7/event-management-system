@@ -1,10 +1,9 @@
 const express = require('express');
 const { createRegistration, getRegistrations, getMyRegistrations } = require('../controllers/registrationController');
-const { protect, optionalProtect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
-router.post('/', optionalProtect, createRegistration);
-router.get('/my', protect, getMyRegistrations);
-router.get('/', optionalProtect, getRegistrations);
+router.post('/', createRegistration);
+router.get('/my', getMyRegistrations);
+router.get('/', getRegistrations);
 
 module.exports = router;

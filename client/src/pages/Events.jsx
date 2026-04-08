@@ -23,6 +23,8 @@ const Events = () => {
   const [regForm, setRegForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [usingFallbackEvents, setUsingFallbackEvents] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -33,12 +35,15 @@ const Events = () => {
       const { data } = await axios.get('/api/events');
       if (Array.isArray(data) && data.length > 0) {
         setEvents(data);
+        setUsingFallbackEvents(data.some((event) => String(event._id).startsWith('fallback-event-')));
       } else {
         setEvents(defaultEvents);
+        setUsingFallbackEvents(true);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents(defaultEvents);
+      setUsingFallbackEvents(true);
     } finally {
       setLoading(false);
     }
@@ -49,7 +54,14 @@ const Events = () => {
       return;
     }
 
+    if (usingFallbackEvents) {
+      setSuccessMessage('');
+      setErrorMessage('Registration is unavailable until the database connection is restored.');
+      return;
+    }
+
     setSuccessMessage('');
+    setErrorMessage('');
     setSelectedEvent(event);
     setRegForm(initialForm);
     setIsRegistering(true);
@@ -67,16 +79,18 @@ const Events = () => {
         ...regForm,
         year: Number(regForm.year),
         eventId: selectedEvent._id,
+        eventTitle: selectedEvent.title,
       });
 
       setSuccessMessage(data.message || 'Registration successful.');
+      setErrorMessage('');
       setIsRegistering(false);
       setSelectedEvent(null);
       await fetchEvents();
       setRegForm(initialForm);
     } catch (error) {
       console.error('Registration failed:', error);
-      window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
+      setErrorMessage(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -150,6 +164,13 @@ const Events = () => {
           </div>
         )}
 
+        {errorMessage && (
+          <div className="mb-8 flex items-center gap-3 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
+            <Info className="h-5 w-5" />
+            <span className="font-semibold">{errorMessage}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
           <AnimatePresence mode="popLayout">
             {filteredEvents.length > 0 ? filteredEvents.map((event) => (
@@ -210,6 +231,12 @@ const Events = () => {
                   </button>
                 </div>
 
+                {errorMessage && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    {errorMessage}
+                  </div>
+                )}
+
                 <form onSubmit={submitRegistration} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 ml-1">Name</label>
@@ -261,16 +288,6 @@ const Events = () => {
                         placeholder="Computer Engineering"
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">Event ID</label>
-                    <input
-                      type="text"
-                      value={selectedEvent._id}
-                      readOnly
-                      className="w-full px-6 py-4 bg-slate-100 border border-slate-100 rounded-2xl text-slate-500 outline-none"
-                    />
                   </div>
 
                   <button
