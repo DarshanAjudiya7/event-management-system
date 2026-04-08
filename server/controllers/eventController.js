@@ -1,5 +1,11 @@
 const Event = require('../models/Event');
+const defaultEvents = require('../data/defaultEvents');
 const ensureDefaultEvents = require('../utils/ensureDefaultEvents');
+
+const formatFallbackEvents = () => defaultEvents.map((event, index) => ({
+  ...event,
+  _id: `fallback-event-${index + 1}`,
+}));
 
 exports.createEvent = async (req, res) => {
   const { title, description, date, status, image, totalRegistrations } = req.body;
@@ -24,7 +30,8 @@ exports.getEvents = async (req, res) => {
     const events = await Event.find({}).sort({ date: -1 });
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Falling back to default events:', error.message);
+    res.json(formatFallbackEvents());
   }
 };
 

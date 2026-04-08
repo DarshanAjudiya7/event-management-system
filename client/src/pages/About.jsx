@@ -5,14 +5,19 @@ import { Mail, Users, History, CalendarHeart } from 'lucide-react';
 const About = () => {
     const ownerProfiles = [
         {
-            image: '/owners/profile.jpeg',
-            title: 'Website Owner',
-            blurb: 'Leading the vision behind Eventify with a focus on simplicity, clarity, and a polished user experience.'
+            image: '/owners/profile1.jpeg',
+            title: 'Backend',
+            blurb: 'Powering Eventify behind the scenes with the core server logic, data flow, and reliable event management features.'
         },
         {
             image: '/owners/heer.jpeg',
-            title: 'Website Owner',
-            blurb: 'Helping shape the platform with thoughtful execution, fresh ideas, and a strong builder mindset.'
+            title: 'UI UX',
+            blurb: 'Designing the Eventify experience with a focus on clean interfaces, smooth interactions, and a welcoming visual flow.'
+        },
+        {
+            image: '/owners/nilesh.jpeg',
+            title: 'Database Connector',
+            blurb: 'Keeping Eventify connected to its data layer with dependable database integration, smooth queries, and structured information flow.'
         }
     ];
 
@@ -99,7 +104,7 @@ const About = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {ownerProfiles.map((owner, index) => (
                         <motion.div
                             key={owner.image}

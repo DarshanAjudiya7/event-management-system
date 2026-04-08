@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, CheckCircle, Info, ArrowRight, ShieldCheck, LogIn, UserPlus } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Search, X, CheckCircle, Info, ArrowRight } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import Loader from '../components/Loader';
-import { useAuth } from '../context/AuthContext';
+import defaultEvents from '../data/defaultEvents';
 
 const initialForm = {
   name: '',
@@ -15,10 +14,7 @@ const initialForm = {
 };
 
 const Events = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState([]);
-  const [registeredEventIds, setRegisteredEventIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -27,39 +23,28 @@ const Events = () => {
   const [regForm, setRegForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [authPromptEvent, setAuthPromptEvent] = useState(null);
+  const [eventsMessage, setEventsMessage] = useState('');
 
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      setRegForm((current) => ({ ...current, name: current.name || user.name || '' }));
-      fetchMyRegistrations();
-    } else {
-      setRegisteredEventIds([]);
-      setRegForm(initialForm);
-    }
-  }, [user]);
-
   const fetchEvents = async () => {
     try {
       const { data } = await axios.get('/api/events');
-      setEvents(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setEvents(data);
+        setEventsMessage('');
+      } else {
+        setEvents(defaultEvents);
+        setEventsMessage('Showing default events because no saved events were returned from the backend yet.');
+      }
     } catch (error) {
       console.error('Error fetching events:', error);
+      setEvents(defaultEvents);
+      setEventsMessage('Showing default events because the backend event feed is unavailable right now.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMyRegistrations = async () => {
-    try {
-      const { data } = await axios.get('/api/register/my');
-      setRegisteredEventIds(data.map((registration) => registration.eventId?._id).filter(Boolean));
-    } catch (error) {
-      console.error('Error fetching my registrations:', error);
     }
   };
 
@@ -68,50 +53,31 @@ const Events = () => {
       return;
     }
 
-    if (registeredEventIds.includes(event._id)) {
-      return;
-    }
-
     setSuccessMessage('');
     setSelectedEvent(event);
-    setRegForm({
-      name: user?.name || '',
-      collegeId: '',
-      year: '1',
-      branch: '',
-    });
+    setRegForm(initialForm);
     setIsRegistering(true);
   };
 
   const submitRegistration = async (e) => {
     e.preventDefault();
-    console.log('Submitting registration with form data:', regForm);
     if (!selectedEvent) {
-      console.warn('No event selected for registration.');
       return;
     }
 
     setSubmitting(true);
     try {
-      console.log('Targeting API /api/registrations for event:', selectedEvent._id);
       const { data } = await axios.post('/api/registrations', {
         ...regForm,
         year: Number(regForm.year),
         eventId: selectedEvent._id,
       });
 
-      console.log('Registration Response:', data);
       setSuccessMessage(data.message || 'Registration successful.');
       setIsRegistering(false);
       setSelectedEvent(null);
-      
-      const fetchPromises = [fetchEvents()];
-      if (user) {
-        fetchPromises.push(fetchMyRegistrations());
-      }
-      await Promise.all(fetchPromises);
-      
-      setRegForm((current) => ({ ...initialForm, name: user?.name || '' }));
+      await fetchEvents();
+      setRegForm(initialForm);
     } catch (error) {
       console.error('Registration failed:', error);
       window.alert(error.response?.data?.message || 'Registration failed. Please try again.');
@@ -136,7 +102,7 @@ const Events = () => {
     { id: 'past', label: 'Past' },
   ];
 
-  if (loading || authLoading) return <Loader />;
+  if (loading) return <Loader />;
 
   return (
     <div className="min-h-screen bg-slate-50/30 py-20">
@@ -188,6 +154,13 @@ const Events = () => {
           </div>
         )}
 
+        {eventsMessage && (
+          <div className="mb-8 flex items-center gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-700 shadow-sm">
+            <Info className="h-5 w-5" />
+            <span className="font-semibold">{eventsMessage}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
           <AnimatePresence mode="popLayout">
             {filteredEvents.length > 0 ? filteredEvents.map((event) => (
@@ -195,7 +168,6 @@ const Events = () => {
                 key={event._id}
                 event={event}
                 onRegister={handleRegister}
-                isRegistered={registeredEventIds.includes(event._id)}
               />
             )) : (
               <motion.div
@@ -215,68 +187,6 @@ const Events = () => {
       </div>
 
       <AnimatePresence>
-        {authPromptEvent && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setAuthPromptEvent(null)}
-              className="absolute inset-0 bg-slate-900/45 backdrop-blur-md"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-[36px] border border-slate-100 bg-white shadow-2xl"
-            >
-              <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 p-8 text-white">
-                <div className="mb-4 inline-flex rounded-2xl bg-white/15 p-3 backdrop-blur-sm">
-                  <ShieldCheck className="h-7 w-7" />
-                </div>
-                <h3 className="text-3xl font-black leading-tight">Login Required</h3>
-                <p className="mt-3 max-w-md text-sm font-medium text-blue-50">
-                  Please sign in or create an account before registering for <span className="font-black">{authPromptEvent.title}</span>.
-                </p>
-              </div>
-
-              <div className="space-y-6 p-8">
-                <div className="rounded-3xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm font-medium text-slate-600">
-                  Your registration details will be saved securely in MongoDB after authentication.
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <NavLink
-                    to="/login"
-                    state={{ from: '/events' }}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-700"
-                  >
-                    <LogIn className="h-4 w-4" />
-                    <span>Login Now</span>
-                  </NavLink>
-                  <NavLink
-                    to="/register"
-                    state={{ from: '/events' }}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-700 transition-all hover:border-blue-200 hover:text-blue-600"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    <span>Create Account</span>
-                  </NavLink>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setAuthPromptEvent(null)}
-                  className="w-full rounded-2xl bg-slate-100 px-5 py-3.5 text-sm font-bold text-slate-500 transition-all hover:bg-slate-200"
-                >
-                  Maybe Later
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
         {isRegistering && selectedEvent && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div

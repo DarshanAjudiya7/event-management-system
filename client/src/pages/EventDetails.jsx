@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, DollarSign, Users, CheckCircle, Info, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, CheckCircle, Info, Sparkles } from 'lucide-react';
 
 const EventDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isBooked, setIsBooked] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
@@ -18,29 +14,20 @@ const EventDetails = () => {
       try {
         const { data } = await axios.get(`/api/events/${id}`);
         setEvent(data);
-        if (user) {
-          const { data: bookings } = await axios.get('/api/bookings/myBookings');
-          setIsBooked(bookings.some(b => b.eventId._id === id));
-        }
       } catch (err) {
         console.error(err);
       }
       setLoading(false);
     };
     fetchEvent();
-  }, [id, user]);
+  }, [id]);
 
   const handleBooking = async () => {
     try {
       await axios.post('/api/bookings', { eventId: id });
-      setIsBooked(true);
-      setStatus({ type: 'success', message: '🎉 Registration successful! Your ticket is confirmed.' });
+      setStatus({ type: 'success', message: 'Registration successful! Your ticket is confirmed.' });
     } catch (err) {
-      if (err.response?.status === 401) {
-        navigate('/login');
-      } else {
-        setStatus({ type: 'error', message: err.response?.data?.message || 'Failed to book event' });
-      }
+      setStatus({ type: 'error', message: err.response?.data?.message || 'Failed to book event' });
     }
   };
 
@@ -68,7 +55,7 @@ const EventDetails = () => {
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Sparkles size={28} color="var(--primary)" /> Secure Your Spot
             </h2>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <Calendar size={20} color="var(--text-muted)" />
@@ -99,16 +86,10 @@ const EventDetails = () => {
               </div>
             )}
 
-            {isBooked ? (
-              <button disabled className="glass" style={{ width: '100%', padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(16, 185, 129, 0.1)', cursor: 'default', opacity: 0.8 }}>
-                <CheckCircle size={22} color="#10b981" /> Already Booked
-              </button>
-            ) : (
-              <button onClick={handleBooking} className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '1.2rem' }}>
-                Register for Event
-              </button>
-            )}
-            
+            <button onClick={handleBooking} className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '1.2rem' }}>
+              Register for Event
+            </button>
+
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginTop: '15px' }}>Instant confirmation upon registration.</p>
           </div>
         </div>

@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { Menu, X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -16,12 +13,6 @@ const Navbar = () => {
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Contact', path: '/contact' },
   ];
-
-  const handleLogout = () => {
-    logout();
-    setIsOpen(false);
-    navigate('/');
-  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -50,32 +41,6 @@ const Navbar = () => {
                 {link.name}
               </NavLink>
             ))}
-            {user ? (
-              <>
-                <span className="text-sm font-semibold text-slate-500">{user.name}</span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-slate-700 shadow-lg shadow-slate-900/10 active:scale-95 transition-all"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <NavLink
-                  to="/login"
-                  className="text-sm font-medium transition-colors hover:text-blue-600 text-slate-600"
-                >
-                  Login
-                </NavLink>
-                <NavLink
-                  to="/register"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                >
-                  Create Account
-                </NavLink>
-              </>
-            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -111,33 +76,6 @@ const Navbar = () => {
                 {link.name}
               </NavLink>
             ))}
-            <div className="pt-4 border-t border-slate-50">
-              {user ? (
-                <button
-                  onClick={handleLogout}
-                  className="block w-full bg-slate-900 text-white py-3 rounded-xl text-center font-semibold hover:bg-slate-700"
-                >
-                  Logout
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  <NavLink
-                    to="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="block w-full border border-slate-200 text-slate-700 py-3 rounded-xl text-center font-semibold hover:border-blue-200 hover:text-blue-600"
-                  >
-                    Login
-                  </NavLink>
-                  <NavLink
-                    to="/register"
-                    onClick={() => setIsOpen(false)}
-                    className="block w-full bg-blue-600 text-white py-3 rounded-xl text-center font-semibold hover:bg-blue-700"
-                  >
-                    Create Account
-                  </NavLink>
-                </div>
-              )}
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
