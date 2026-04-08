@@ -36,10 +36,6 @@ const Dashboard = () => {
       console.error(err);
       setEvents(defaultEvents);
       setRegistrations([]);
-      setFeedback({
-        type: 'warning',
-        message: 'Showing built-in events because the backend feed is unavailable right now.'
-      });
     } finally {
       setLoading(false);
     }
@@ -51,9 +47,7 @@ const Dashboard = () => {
     <div className="container mx-auto px-4 py-12 lg:py-20">
       {feedback.message && (
         <div className={`mb-8 flex items-center gap-3 rounded-3xl px-5 py-4 shadow-sm border ${
-          feedback.type === 'warning'
-            ? 'border-amber-200 bg-amber-50 text-amber-700'
-            : 'border-red-200 bg-red-50 text-red-700'
+          'border-red-200 bg-red-50 text-red-700'
         }`}>
           <Info size={18} />
           <span className="font-semibold">{feedback.message}</span>

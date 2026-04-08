@@ -23,7 +23,6 @@ const Events = () => {
   const [regForm, setRegForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [eventsMessage, setEventsMessage] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -34,15 +33,12 @@ const Events = () => {
       const { data } = await axios.get('/api/events');
       if (Array.isArray(data) && data.length > 0) {
         setEvents(data);
-        setEventsMessage('');
       } else {
         setEvents(defaultEvents);
-        setEventsMessage('Showing default events because no saved events were returned from the backend yet.');
       }
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents(defaultEvents);
-      setEventsMessage('Showing default events because the backend event feed is unavailable right now.');
     } finally {
       setLoading(false);
     }
@@ -151,13 +147,6 @@ const Events = () => {
           <div className="mb-8 flex items-center gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700 shadow-sm">
             <CheckCircle className="h-5 w-5" />
             <span className="font-semibold">{successMessage}</span>
-          </div>
-        )}
-
-        {eventsMessage && (
-          <div className="mb-8 flex items-center gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-700 shadow-sm">
-            <Info className="h-5 w-5" />
-            <span className="font-semibold">{eventsMessage}</span>
           </div>
         )}
 
