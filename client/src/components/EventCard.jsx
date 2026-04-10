@@ -3,16 +3,17 @@ import { CalendarDays, ArrowRight, Lock, Clock3, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const EventCard = ({ event, onRegister }) => {
-  const { title, description, date, status, image, totalRegistrations = 0 } = event;
+  const { title, description, date, status, image, totalRegistrations = 0, maxRegistrations = 50 } = event;
 
   const isPast = status === 'past';
+  const isFull = !isPast && totalRegistrations >= maxRegistrations;
 
   const badgeStyles = isPast
     ? 'bg-slate-100 text-slate-500 ring-slate-200'
     : 'bg-blue-100 text-blue-600 ring-blue-200';
 
   const renderButton = () => {
-    if (isPast) {
+    if (isPast || isFull) {
       return (
         <button
           type="button"
@@ -20,7 +21,7 @@ const EventCard = ({ event, onRegister }) => {
           className="w-full rounded-2xl bg-slate-100 px-5 py-3.5 text-sm font-black text-slate-500 cursor-not-allowed flex items-center justify-center gap-2"
         >
           <Lock className="h-4 w-4" />
-          <span>Registration Closed</span>
+          <span>{isPast ? 'Registration Closed' : 'Event Full'}</span>
         </button>
       );
     }
@@ -66,7 +67,7 @@ const EventCard = ({ event, onRegister }) => {
           </div>
           <div className="inline-flex items-center gap-2">
             <Users className="h-4 w-4 text-blue-600" />
-            <span>{totalRegistrations} Registrations</span>
+            <span>{isPast ? `${totalRegistrations} Registrations` : `${totalRegistrations}/${maxRegistrations} Registered`}</span>
           </div>
         </div>
 

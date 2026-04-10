@@ -54,6 +54,12 @@ const Events = () => {
       return;
     }
 
+    if ((event.totalRegistrations || 0) >= (event.maxRegistrations || 50)) {
+      setSuccessMessage('');
+      setErrorMessage(`Registration is full. Only ${event.maxRegistrations || 50} students can register for this event.`);
+      return;
+    }
+
     if (usingFallbackEvents) {
       setSuccessMessage('');
       setErrorMessage('Registration is unavailable until the database connection is restored.');
@@ -90,7 +96,7 @@ const Events = () => {
       setRegForm(initialForm);
     } catch (error) {
       console.error('Registration failed:', error);
-      setErrorMessage(error.response?.data?.message || 'Registration failed. Please try again.');
+      setErrorMessage(error.response?.data?.message || 'Cannot reach the registration service right now. Please check that the backend server is running.');
     } finally {
       setSubmitting(false);
     }
@@ -222,6 +228,9 @@ const Events = () => {
                     </span>
                     <h3 className="text-3xl font-black text-slate-900 leading-tight">Student Registration Form</h3>
                     <p className="text-slate-500 font-medium italic">Joining: {selectedEvent.title}</p>
+                    <p className="text-sm font-semibold text-blue-600">
+                      Seats filled: {selectedEvent.totalRegistrations || 0}/{selectedEvent.maxRegistrations || 50}
+                    </p>
                   </div>
                   <button
                     onClick={() => setIsRegistering(false)}

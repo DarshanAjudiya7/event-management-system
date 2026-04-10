@@ -7,6 +7,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const ensureDefaultEvents = require('./utils/ensureDefaultEvents');
+const ensureRegistrationIndexes = require('./utils/ensureRegistrationIndexes');
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(async () => {
     console.log(`MongoDB connected successfully to database: ${DB_NAME}`);
     await ensureDefaultEvents();
+    await ensureRegistrationIndexes();
     console.log('Default events ensured successfully');
   })
   .catch((err) => console.error('MongoDB connection error:', err));

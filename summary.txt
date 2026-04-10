@@ -1,0 +1,44 @@
+# Project Summary: Eventify (Event Management System)
+
+## Overview
+- Eventify is a full-stack event management platform for browsing events and registering students.
+- Built using the MERN stack (MongoDB, Express, React, Node.js) with Vite for the frontend.
+
+## Technology Stack
+- **Frontend**: 
+    - React 18 & Vite
+    - Tailwind CSS (Styling)
+    - Framer Motion (Animations)
+    - Lucide React (Icons)
+    - Axios (API requests)
+- **Backend**:
+    - Node.js & Express
+    - MongoDB & Mongoose (Database)
+    - Dotenv (Environment variables)
+
+## Key Features
+- **Event Browsing**: 
+    - View all events with filtering options (All, Upcoming, Past).
+    - Modern and responsive UI with smooth animations.
+- **Registration System**:
+    - Anonymous registration for guest users (no login required on frontend).
+    - Fields: Name, College ID, Year, Branch.
+    - Validation prevents duplicate registrations for the same student and event.
+    - Only upcoming events allow new registrations.
+- **Dashboard**:
+    - **Events Library**: Overview of all events and registration counts.
+    - **Student Directory**: List of all registered students and their associated events.
+- **Data Persistence**:
+    - All registrations and event metadata are stored in MongoDB.
+    - Automatic seeding of default events (Git/Github, Supabase, Web Development Bootcamp).
+
+## Project Structure
+- `client/`: Contains the React frontend codebase.
+- `server/`: Contains the Express backend API.
+- `package.json`: Root package file for managing dependencies across both client and server.
+
+## API Endpoints
+- `GET /api/events`: Fetches the list of all events.
+- `GET /api/events/:id`: Fetches details for a specific event.
+- `POST /api/registrations`: Handles new student registrations.
+- `GET /api/registrations`: Retrieves all registration data for the dashboard.

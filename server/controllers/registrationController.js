@@ -1,35 +1,18 @@
 const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const mongoose = require('mongoose');
-
-let legacyIndexChecked = false;
-
-const ensureLegacyIndexRemoved = async () => {
-  if (legacyIndexChecked) return;
-
-  try {
-    const indexes = await Registration.collection.indexes();
-    const duplicateIndex = indexes.find((index) => index.name === 'collegeId_1_eventId_1');
-
-    if (duplicateIndex) {
-      await Registration.collection.dropIndex('collegeId_1_eventId_1');
-    }
-  } catch (error) {
-    // Ignore if the collection or index does not exist yet.
-  } finally {
-    legacyIndexChecked = true;
-  }
-};
+const ensureRegistrationIndexes = require('../utils/ensureRegistrationIndexes');
 
 exports.createRegistration = async (req, res) => {
   const { name, collegeId, year, branch, eventId, eventTitle } = req.body;
+  let reservedSeat = false;
 
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: 'Registration is temporarily unavailable. Please try again in a moment.' });
     }
 
-    await ensureLegacyIndexRemoved();
+    await ensureRegistrationIndexes();
 
     if (!name || !collegeId || !year || !branch || !eventId) {
       return res.status(400).json({ message: 'Please fill all registration fields' });
@@ -53,20 +36,57 @@ exports.createRegistration = async (req, res) => {
       return res.status(400).json({ message: 'Registration closed for this event' });
     }
 
+    const maxRegistrations = event.maxRegistrations || 50;
+
+    const reservedEvent = await Event.findOneAndUpdate(
+      {
+        _id: event._id,
+        status: 'upcoming',
+        totalRegistrations: { $lt: maxRegistrations }
+      },
+      {
+        $inc: { totalRegistrations: 1 }
+      },
+      { new: true }
+    );
+
+    if (!reservedEvent) {
+      return res.status(400).json({ message: `Registration is full. Only ${maxRegistrations} students can register for this event.` });
+    }
+
+    reservedSeat = true;
+
     const registration = await Registration.create({
-      name,
-      collegeId,
+      name: name.trim(),
+      collegeId: collegeId.trim().toLowerCase(),
       year,
-      branch,
+      branch: branch.trim(),
       eventId: event._id
     });
 
-    event.totalRegistrations += 1;
-    await event.save();
-
-    res.status(201).json({ message: 'Registration successful', registration });
+    res.status(201).json({
+      message: 'Registration successful',
+      registration,
+      event: {
+        _id: reservedEvent._id,
+        totalRegistrations: reservedEvent.totalRegistrations,
+        maxRegistrations: reservedEvent.maxRegistrations || maxRegistrations
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    if (reservedSeat && mongoose.connection.readyState === 1 && mongoose.isValidObjectId(eventId)) {
+      await Event.findByIdAndUpdate(eventId, { $inc: { totalRegistrations: -1 } }).catch(() => null);
+    }
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'This College ID is already registered for this event.' });
+    }
+
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 

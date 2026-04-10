@@ -6,6 +6,7 @@ const eventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   status: { type: String, enum: ['past', 'upcoming'], required: true },
   totalRegistrations: { type: Number, default: 0, min: 0 },
+  maxRegistrations: { type: Number, default: 50, min: 1 },
   image: { type: String, default: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80' }
 }, { timestamps: true });
 

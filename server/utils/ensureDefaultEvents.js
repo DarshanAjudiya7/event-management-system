@@ -14,6 +14,7 @@ const ensureDefaultEvents = async () => {
     existingEvent.date = eventData.date;
     existingEvent.status = eventData.status;
     existingEvent.image = eventData.image;
+    existingEvent.maxRegistrations = eventData.maxRegistrations || existingEvent.maxRegistrations || 50;
 
     if (eventData.status === 'past') {
       existingEvent.totalRegistrations = eventData.totalRegistrations;

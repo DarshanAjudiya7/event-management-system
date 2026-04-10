@@ -6,6 +6,7 @@ const defaultEvents = [
     date: '2026-01-15T10:00:00+05:30',
     status: 'past',
     totalRegistrations: 55,
+    maxRegistrations: 50,
     image: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb',
   },
   {
@@ -15,6 +16,7 @@ const defaultEvents = [
     date: '2026-02-10T11:00:00+05:30',
     status: 'past',
     totalRegistrations: 72,
+    maxRegistrations: 50,
     image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c',
   },
   {
@@ -24,6 +26,7 @@ const defaultEvents = [
     date: '2026-04-25T09:30:00+05:30',
     status: 'upcoming',
     totalRegistrations: 0,
+    maxRegistrations: 50,
     image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
   },
 ];

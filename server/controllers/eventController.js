@@ -8,7 +8,7 @@ const formatFallbackEvents = () => defaultEvents.map((event, index) => ({
 }));
 
 exports.createEvent = async (req, res) => {
-  const { title, description, date, status, image, totalRegistrations } = req.body;
+  const { title, description, date, status, image, totalRegistrations, maxRegistrations } = req.body;
   try {
     const event = await Event.create({
       title,
@@ -16,7 +16,8 @@ exports.createEvent = async (req, res) => {
       date,
       status,
       image,
-      totalRegistrations: totalRegistrations || 0
+      totalRegistrations: totalRegistrations || 0,
+      maxRegistrations: maxRegistrations || 50
     });
     res.status(201).json(event);
   } catch (error) {
